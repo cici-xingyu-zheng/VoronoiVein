@@ -14,7 +14,6 @@ from scipy.optimize import linear_sum_assignment
 
 # ==================================== HELPER FUNCs =======================================
 
-
 def add_pet_n_tip(G, tip_file, pet_file):
     
     '''
@@ -253,95 +252,7 @@ def change_coor(G, G_prime):
     return G_prime
 
 
-# ------------------------------------------------------------------------------------------------------------------------------------------
 
-## functions for matching:
-
-## WONT BE COPIED OVER. 01/03/23
-
-def get_hydathodes(G):
-    # generator: 
-    nodes = (
-        node
-        for node, data
-        in G.nodes(data=True)
-        if (data.get("type") == "dot" or data.get("type") == "single_dot")
-    )
-    G_subgraph = G.subgraph(nodes)
-
-    return G_subgraph
-
-
-def get_veins(G):
-    nodes = (
-        node
-        for node, data
-        in G.nodes(data=True)
-        if (data.get("type") == "vein" )
-    )
-
-    G_vein= G.subgraph(nodes)
-
-    return G_vein
-
-
-def hydathode_matching(G_sub, G_prime_sub):
-
-    G_pos = list(nx.get_node_attributes(G_sub,'pos').values())
-    G_prim_pos = list(nx.get_node_attributes(G_prime_sub,'pos').values())
-
-    # return the distance matrix between two sets of coordinates:
-    dist_mat = cdist(G_pos, G_prim_pos, 'euclidean')    
-
-    # row_ind: index of all matched nodes in G
-    # col_ind: index of all matched nodes in G prime
-    row_ind, col_ind = linear_sum_assignment(dist_mat, maximize= False)
-
-    error = dist_mat[row_ind, col_ind].sum()
-    error = error/len(row_ind)
-
-
-    return row_ind, col_ind, error
-
-
-def match_color(G_sub, G_prime_sub):
-
-    'make sure that G_prime_sub has more nodes!!!' 
-    
-    row_ind, col_ind, _ = hydathode_matching(G_sub, G_prime_sub)
-
-    G_nodes =  list(G_sub.nodes)
-
-    G_prime_nodes = list(G_prime_sub.nodes)
-
-    for i in range(len(col_ind)):
-        dot = G_nodes[row_ind[i]]
-        dot_prime = G_prime_nodes[col_ind[i]]
-
-        G_sub.nodes[dot]['color'] = i/len(G_prime_nodes)
-        G_prime_sub.nodes[dot_prime]['color'] = i/len(G_prime_nodes)
-
-    # take care of the rest:
-    not_matched = [i  for i in range(len(G_prime_nodes)) if i not in col_ind ]
-
-    for i in range(len(not_matched)):
-        dot_prime = G_prime_nodes[not_matched[i]]
-        G_prime_sub.nodes[dot_prime]['color'] = 1
-    
-
-    G_composed = nx.compose(G_sub, G_prime_sub)
-    
-    for i, node in enumerate(G_nodes):
-        # add an edge for all matched nodes:
-        G_composed.add_edge(node, G_prime_nodes[col_ind[i]], color = G_sub.nodes[node]['color'])
-    
-
-    return G_sub, G_prime_sub, G_composed
-
-    
-
-
-# ------------------------------------------------------------------------------------------------------------------------------------------
 
 ## plotting functions:
 
@@ -416,67 +327,4 @@ def draw_vein(G_vein, ax, width = 3, alpha = .5):
     
     nx.draw_networkx_edges(G_vein, pos = vein_positions, edge_color= 'C7', ax = ax, width = width, alpha = alpha)
 
-
-
-## WONT BE COPIED OVER. 01/03/23
-def plot_matched(G_sub, G_prime_sub):
-    
-    fig, ax = plt.subplots(1,1, figsize=(7, 7*G_sub.graph['ratio']))
-
-    nx.draw(G_sub, pos=nx.get_node_attributes(G_sub,'pos'), 
-                    node_size= 30,   
-                    node_color =list(nx.get_node_attributes(G_sub,'color').values()),
-                    vmin = 0,
-                    vmax = 1,
-                    cmap = plt.cm.get_cmap('rainbow'),
-                    ax = ax) 
-
-
-    nx.draw(G_prime_sub, pos=nx.get_node_attributes(G_prime_sub,'pos'), 
-                    node_size= 30,   
-                    node_color =list(nx.get_node_attributes(G_prime_sub,'color').values()),
-                    vmin = 0,
-                    vmax = 1,
-                    cmap = plt.cm.get_cmap('rainbow'),
-                    ax = ax) 
-
-    
-    boundary = G_sub.graph['boundary'] # ahhhhh this need to be modified too
-    boundary_2 = G_prime_sub.graph['boundary']
-
-    p1 = mpl.patches.Polygon(boundary, facecolor = 'grey', alpha = .05)
-    ax.add_patch(p1)
-    p2 = mpl.patches.Polygon(boundary_2, facecolor = 'grey', alpha = .05)
-    ax.add_patch(p2)
-
-    plt.tight_layout()
-    plt.show() 
-
-
-
-## WONT BE COPIED OVER. 01/03/23
-def plot_composed(G_composed):
-    
-    fig, ax = plt.subplots(1,1, figsize=(7, 7*G_composed.graph['ratio']))
-
-    edge_color = []
-
-    for edge in G_composed.edges:
-        edge_color.append(G_composed.edges[edge]['color'])
-
-    nx.draw(G_composed, pos=nx.get_node_attributes(G_composed,'pos'), 
-                    node_size= 20,   
-                    node_color =list(nx.get_node_attributes(G_composed,'color').values()),
-                    edge_color = edge_color,
-                    vmin = 0,
-                    vmax = 1,
-                    cmap = plt.cm.get_cmap('rainbow'),
-                    edge_vmin = 0, 
-                    edge_vmax = 1,
-                    edge_cmap = plt.cm.get_cmap('rainbow'),
-                    style = '-.',
-                    ax = ax)  
-
-    plt.tight_layout()
-    plt.show() 
 
