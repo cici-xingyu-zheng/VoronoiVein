@@ -8,8 +8,10 @@
 
 1. navigate to the project folder, create a virtual environment (called `pilea`):
 
-`conda env create -f environment.yml`
+`conda env create -f pilea_env.yml`
+
 or
+
 `conda create --name pilea --file pilea_requirements.txt`
 
 This way we create a virtual environment with all the package versions freezed for this project.
