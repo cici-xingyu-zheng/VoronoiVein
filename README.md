@@ -1,5 +1,11 @@
+Below are the steps to explore the Voronoi tests with Pilea leaf samples.
+
+
 ### Clone the repository to local:
-`clone https://github.com/cici-xingyu-zheng/VoronoiVein.git`
+
+```
+clone https://github.com/cici-xingyu-zheng/VoronoiVein.git
+```
 
 
 ### Create virtual environment for this project:
