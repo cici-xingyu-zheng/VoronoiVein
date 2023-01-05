@@ -29,7 +29,9 @@ This way we create a virtual environment with all the package versions freezed f
 
 2. activate the `pilea` environment we just created:
 
-`conda activate pilea`
+```
+conda activate pilea
+```
 
 
 #### 2. alternatively, using `pip`:
@@ -49,5 +51,4 @@ jupyter notebook
 ```
 
 and navigate to notebooks like `voronoi_tests/voronoi_tests_example.ipynb` and run them.
-
 
