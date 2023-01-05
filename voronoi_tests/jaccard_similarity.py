@@ -225,13 +225,16 @@ def bounded_polygons(G, vor):
         
         # periphery polygon intersecting with the bounded area in the blade:
 
-        # ---------------------------------------------------------------
         # when boundary not even, in the case of random dots in the face, 
-        # this intersection can return a multi polygon: 
-        bounded_geom = p.intersection(boundary_polygon)
-        #  ----------------------------------------------------------------
+        # this intersection can return a multi polygon,
+        # therefore we filter them out:
+        try:
+            bounded_geom = p.intersection(boundary_polygon)
+            bounded_regions.append(list(bounded_geom.exterior.coords))
 
-        bounded_regions.append(list(bounded_geom.exterior.coords))
+        except AttributeError:            
+            bounded_regions.append([])
+            print('One multipolygon generated...')
 
     return bounded_regions
 
@@ -285,11 +288,13 @@ def overlap_test(G, seeds, bounded_regions, type = 'dot'):
     union_area_list = np.zeros(L)
 
     for i in range(L):
-        shared_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).intersection(Polygon(bounded_regions[passed_index[i]]))
-        shared_area_list[i] = shared_shape.area
+        # if this is not a multi polygon (that we ignore using an empty list[]):
+        if bounded_regions[passed_index[i]]:
+            shared_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).intersection(Polygon(bounded_regions[passed_index[i]]))
+            shared_area_list[i] = shared_shape.area
 
-        union_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).union(Polygon(bounded_regions[passed_index[i]]))
-        union_area_list[i] = union_shape.area
+            union_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).union(Polygon(bounded_regions[passed_index[i]]))
+            union_area_list[i] = union_shape.area
 
     J_list = shared_area_list/union_area_list
 
@@ -297,8 +302,11 @@ def overlap_test(G, seeds, bounded_regions, type = 'dot'):
     difference_geom = []
 
     for i in range(L):
-        diff = Polygon(G.graph['faces_passed'][i]).buffer(0).symmetric_difference(Polygon(bounded_regions[passed_index[i]]))
-        difference_geom.append(diff)
+        # if this is not a multi polygon (that we ignore using an empty list[]):
+        if bounded_regions[passed_index[i]]:
+
+            diff = Polygon(G.graph['faces_passed'][i]).buffer(0).symmetric_difference(Polygon(bounded_regions[passed_index[i]]))
+            difference_geom.append(diff)
 
     G.graph[f'diff_geom_{type}'] = difference_geom
 
