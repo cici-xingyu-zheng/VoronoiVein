@@ -50,5 +50,5 @@ The easiest way to try out the code locally is to open the demo notebooks on a w
 jupyter notebook
 ```
 
-and navigate to notebooks like `voronoi_tests/voronoi_tests_example.ipynb` and run them.
+and navigate to notebooks like `voronoi_tests/notebooks/voronoi_tests_example.ipynb` and run them.
 
