@@ -1,9 +1,13 @@
-
-import numpy as np
 import random
 import math
 from collections import defaultdict
+
+import numpy as np
+
 from shapely.geometry import Polygon, Point
+
+### This module performs Voronoi II test.
+
 
 # ==================================== HELPER FUNCs =======================================
 
@@ -204,6 +208,9 @@ def get_random_point_in(poly):
 
 def bounded_polygons(G, vor):
     '''
+    For the scipy Voronoi create output, reconstructed all Voronoi poygons,
+    and for the infinite ones, bound it with the leaf boundary.
+
     Parameter:  
     ----------
     G: nx graph object
@@ -241,6 +248,9 @@ def bounded_polygons(G, vor):
 
 def bounded_noisy_polygons(G, vor, noise = 2):
     '''
+    For the scipy Voronoi create output, reconstruct Voronoi cells,
+    but give the verticies some random displacement.
+
     Parameter:  
     ----------
     G: nx graph object
@@ -257,15 +267,22 @@ def bounded_noisy_polygons(G, vor, noise = 2):
     boundary_polygon = Polygon(np.array(G.graph['boundary']))
     
     for p in finite_noisy_polygons(G, vor, diameter, noise):
-        sorted_p = sorted_polygon(p)
-        # big periphery polygon intersecting with the bounded area in the blade:
-        bounded_regions.append(list(sorted_p.intersection(boundary_polygon).exterior.coords))
+        try:
+            sorted_p = sorted_polygon(p)
+            # big periphery polygon intersecting with the bounded area in the blade:
+            bounded_regions.append(list(sorted_p.intersection(boundary_polygon).exterior.coords))
+        except AttributeError:   
+            bounded_regions.append([])
+            print('One multipolygon generated...')
 
     return bounded_regions
 
 
 def overlap_test(G, seeds, bounded_regions, type = 'dot'):
     '''
+    Perform the Jaccard index test, computing the intersection/overlap value,
+    for each vein graph, and the corresponding Voronoi cell.
+
     Parameter:  
     ----------
     G: nx graph object
@@ -290,10 +307,12 @@ def overlap_test(G, seeds, bounded_regions, type = 'dot'):
     for i in range(L):
         # if this is not a multi polygon (that we ignore using an empty list[]):
         if bounded_regions[passed_index[i]]:
-            shared_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).intersection(Polygon(bounded_regions[passed_index[i]]))
+            shared_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).intersection(
+                            Polygon(bounded_regions[passed_index[i]]))
             shared_area_list[i] = shared_shape.area
 
-            union_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).union(Polygon(bounded_regions[passed_index[i]]))
+            union_shape = Polygon(G.graph['faces_passed'][i]).buffer(0).union(
+                            Polygon(bounded_regions[passed_index[i]]))
             union_area_list[i] = union_shape.area
 
     J_list = shared_area_list/union_area_list
@@ -305,7 +324,8 @@ def overlap_test(G, seeds, bounded_regions, type = 'dot'):
         # if this is not a multi polygon (that we ignore using an empty list[]):
         if bounded_regions[passed_index[i]]:
 
-            diff = Polygon(G.graph['faces_passed'][i]).buffer(0).symmetric_difference(Polygon(bounded_regions[passed_index[i]]))
+            diff = Polygon(G.graph['faces_passed'][i]).buffer(0).symmetric_difference(
+                    Polygon(bounded_regions[passed_index[i]]))
             difference_geom.append(diff)
 
     G.graph[f'diff_geom_{type}'] = difference_geom
@@ -316,6 +336,8 @@ def overlap_test(G, seeds, bounded_regions, type = 'dot'):
     
 def overlap_noisy_vertices(G, seeds, bounded_regions, noisy_regions):
     '''
+    Compute the J-index score for each Voronoi cell, and the noisy version of it.
+
     Parameter:  
     ----------
     G: nx graph object
@@ -337,8 +359,10 @@ def overlap_noisy_vertices(G, seeds, bounded_regions, noisy_regions):
     union_area_list = np.zeros(L)
 
     for i in range(L):
-        shared_area_list[i] = Polygon(noisy_regions[passed_index[i]]).intersection(Polygon(bounded_regions[passed_index[i]])).area
-        union_area_list[i] = Polygon(noisy_regions[passed_index[i]]).union(Polygon(bounded_regions[passed_index[i]])).area
+        shared_area_list[i] = Polygon(noisy_regions[passed_index[i]]).intersection(
+                                Polygon(bounded_regions[passed_index[i]])).area
+        union_area_list[i] = Polygon(noisy_regions[passed_index[i]]).union(
+                                Polygon(bounded_regions[passed_index[i]])).area
 
     J_list = shared_area_list/union_area_list
     return J_list
@@ -348,15 +372,19 @@ def overlap_noisy_vertices(G, seeds, bounded_regions, noisy_regions):
 def hybrid_seeds(G):
 
     '''
+    Create the Voronoi tesellation seeding set for each reference point set.
+    
     Parameter:  
     ----------
     G: nx graph object
 
     Return:
     ----------
-    centroid_seeds/midpoint_seeds/random_seeds: list of point coordinates, same length as seeds;
-                                                replacing the single dots with reference points,
-                                                hybrid with the multi-hydathodes.
+    centroid_seeds/midpoint_seeds/random_seeds: 
+            list of point coordinates,  
+            same length as seeds;
+            replacing the single dots with reference points, 
+            hybrid with the multi-hydathodes.
     '''
 
     centroid_seeds = []

@@ -1,5 +1,5 @@
 
-import graph_create
+import graph_create # local module 
 
 import cv2
 import networkx as nx
@@ -12,7 +12,12 @@ import matplotlib as mpl
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 
+### This module performs the 
+### ordinary Procrustes analysis style alignment.
+### It's own plotting functions are included.
+
 # ==================================== HELPER FUNCs =======================================
+
 
 def add_pet_n_tip(G, tip_file, pet_file):
     
@@ -21,7 +26,7 @@ def add_pet_n_tip(G, tip_file, pet_file):
     '''
 
     img = cv2.imread(tip_file, 0)
-    th, threshed = cv2.threshold(img, 100, 255,  cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
+    _, threshed = cv2.threshold(img, 100, 255,  cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
     # output contour list for dots:
     contour = cv2.findContours(threshed, cv2.RETR_LIST,  cv2.CHAIN_APPROX_SIMPLE)[-2]
 
@@ -150,7 +155,7 @@ def correct_pos(G, rotation):
 
     G.graph['boundary'] = new_boundary
 
-    # -------------- update the location of faces and dots for J_similarity test: -------
+    # update the location of faces and dots for J_similarity test: 
     new_faces = []
     for face in G.graph['faces_passed']:
         new_face = []
@@ -163,7 +168,6 @@ def correct_pos(G, rotation):
     for dot in G.graph['dots_passed']:
         new_dots.append(rotate(G.graph['pet'], dot, rotation))
     G.graph['dot_passed'] = new_dots
-    # -----------------------------------------------------------------------------------
 
     return G
 
@@ -214,7 +218,7 @@ def change_coor(G, G_prime):
         # assign new pos:
         G_prime.nodes[node]['pos'] = new_pos   
     
-    # -------------- update the location of faces and dots for J_similarity test: -------
+    # update the location of faces and dots for J_similarity test:
     new_faces = []
     for face in G_prime.graph['faces_passed']:
         new_face = []
@@ -227,7 +231,6 @@ def change_coor(G, G_prime):
     for dot in G_prime.graph['dots_passed']:
         new_dots.append(G_prime.nodes[dot]['pos'])
     G_prime.graph['dot_passed'] = new_dots
-    # -----------------------------------------------------------------------------------
     
     new_boundary = []
 
@@ -254,7 +257,7 @@ def change_coor(G, G_prime):
 
 
 
-## plotting functions:
+# ================================= plotting functions =====================================
 
 def quick_plot(G):
     '''
@@ -271,17 +274,16 @@ def quick_plot(G):
         node_positions[node] = node
         node_color.append(color_dict[G.nodes[node]['type']])
     
-    fig, ax = plt.subplots(figsize=(6, 6/G.graph['ratio']))
+    _, ax = plt.subplots(figsize=(6, 6/G.graph['ratio']))
    
     nx.draw(G, pos=node_positions, node_size= 30, node_color= node_color, ax = ax) 
     
     plt.tight_layout()
     plt.show()   
-        
-    return
 
 
-# after we do all the transformations, we don't plot nodes by their names but give them a mutable position attribute.
+# after we do the transformations, we don't plot nodes by their names 
+# but give them a mutable position attribute.
 def plot_pos(G):
     '''
     quick plotting for spatial graphs with attr "pos" as a length 2 coordinate vector  
@@ -294,14 +296,12 @@ def plot_pos(G):
         node_positions[node] = G.nodes[node]['pos']
         node_color.append(color_dict[G.nodes[node]['type']])
     
-    fig, ax = plt.subplots(figsize=(6, 6*G.graph['ratio'])) # since we rotate 90 the ratio is the exact opposite.
+    _, ax = plt.subplots(figsize=(6, 6*G.graph['ratio'])) # since we rotate 90 the ratio is the exact opposite.
    
     nx.draw(G, pos=node_positions, node_size= 30, node_color= node_color, ax = ax) 
     
     plt.tight_layout()
-    plt.show()   
-        
-    return
+    plt.show()
 
 
 def draw_nodes(G_sub, ax, color = 'deepskyblue'):
@@ -327,4 +327,5 @@ def draw_vein(G_vein, ax, width = 3, alpha = .5):
     
     nx.draw_networkx_edges(G_vein, pos = vein_positions, edge_color= 'C7', ax = ax, width = width, alpha = alpha)
 
+# =========================================================================================
 

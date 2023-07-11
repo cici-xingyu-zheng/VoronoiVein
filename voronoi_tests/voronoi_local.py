@@ -1,10 +1,14 @@
+import math
+import random
+
 import numpy as np
 import pandas as pd
 import networkx as nx
-import math
-import random
+
 from matplotlib.path import Path
 from shapely.geometry import Point, Polygon 
+
+### This module performs Voronoi I test.
 
 # ==================================== HELPER FUNCs ========================================
 
@@ -19,12 +23,11 @@ def slope_intercept(p1, p2):
     try:
         s = (p1[1] - p2[1])/(p1[0] - p2[0])
         if math.isinf(s) and s > 0:
-            s = 10000
+            s = 10000 # slope approximating vertical
         elif math.isinf(s) and s < 0:  
-            s = -10000
+            s = -10000 # slope approximating vertical
     except ZeroDivisionError:
-        s = 10000
-   
+        s = 10000 # slope approximating vertical
         
     # intercept: 
     d = - s*p1[0] + p1[1]
@@ -50,7 +53,7 @@ def intersect(s1, d1, s2, d2):
     return intersection
 
 def error_calculate(dot1, dot2, vein_node1, vein_node2):
-    
+
     '''
     helper function for local_test().
 
@@ -91,6 +94,10 @@ def get_random_point_in(poly):
 def shared_edges(G, threshold = 50):
     
     '''
+    Store a boolean adjacency matrix for the polygons, store a seperate table, with entries at (a, b)
+    being the shared edges for the respective adjacent polygon at row a and column b in the boolean 
+    matrix.
+
     Parameters:  
     ----------
     G: nx graph
@@ -156,18 +163,16 @@ def shared_edges(G, threshold = 50):
     
     return adj_faces_mat, shared_edges_mat
 
-
-
-
 def random_n_centroid(G):
     '''
+    Generate reference point sets.
+
     Parameters:  
     ----------
     G: nx graph
 
     Returns:
     ----------
-
     centroid_in_faces: 2d array, centroid for each face
     mid_in_faces: mid point of axis for each face
     rand_in_faces: 2d array, random point in the face
@@ -182,7 +187,7 @@ def random_n_centroid(G):
     for i in range(L):
         poly = Polygon(G.graph['faces_passed'][i])
         cent_in_faces[i] = list(poly.centroid.coords)[0]
-        # the explanation for how to get this point:
+        # the explanation for how to get the mid-point:
         # https://gis.stackexchange.com/questions/414260/how-does-geopandas-representative-point-work
         # this for us, since we are mostly convex, is the mid-point of the bounding box.
         mid_in_faces[i] = list(poly.representative_point().coords)[0]
@@ -195,8 +200,10 @@ def random_n_centroid(G):
 
 # ==================================== MAIN =========================================
 def local_test(adj_faces_mat, shared_edges_mat, dot_list, *Graph, dot_bool = False):
-                
+
     '''
+    Peform Voronoi I angle and dist test.
+
     Parameters:  
     ----------
     adj_faces_mat: M by M boolean np array 
@@ -213,7 +220,6 @@ def local_test(adj_faces_mat, shared_edges_mat, dot_list, *Graph, dot_bool = Fal
             entry ij stores the angle and distance error.
     result_df: list, append all local test results in result_mat to a list
     result_summary_df: dataframe, of summary statistics
-
     '''
 
     M = len(shared_edges_mat)
@@ -283,82 +289,5 @@ def local_test(adj_faces_mat, shared_edges_mat, dot_list, *Graph, dot_bool = Fal
     return (result_mat, result_df, result_summary_df)
 
 
-# obsolete function! WON'T COPY OVER.
-def random_rounds(adj_faces_mat, shared_edges_mat, points_in_faces):
-
-    '''
-    convenient function for 1000 round of random point local test.
-    returns list of mean angle and dsitance error, and an example result for plotting.
-    '''
-    mean_angle_error = np.zeros(1000)
-    mean_dist_error = np.zeros(1000)
-
-    for i in range(1000):
-        result_mat, result_df, result_summary_df = local_test(adj_faces_mat, shared_edges_mat, points_in_faces[:,i,:])
-        mean_angle_error[i] = result_summary_df.loc[0][0]
-        mean_dist_error[i] = result_summary_df.loc[0][2]
-    
-    # save last result as an example:
-    rst = (result_mat, result_df, result_summary_df)
-
-    return mean_angle_error, mean_dist_error, rst
 
 
-
-
-
-
-
-# obsolete function! WON'T COPY OVER. 12/27/22
-def scatter_everywhere(x_min, x_max, y_min, y_max, tot = 5000000):  
-    '''
-    helper function for random dots and centroid genenration functions. 
-    return an 2d array of random points coordinates.
-    '''
-    rand_x = np.random.uniform(x_min, x_max, tot)
-    rand_y = np.random.uniform(y_min, y_max, tot)
-    points = np.transpose(np.stack((rand_x, rand_y)))
-    
-    return points
-
-# obsolete function! WON'T COPY OVER. 12/27/22
-def randlist_n_centroid(G):
-    '''
-    Parameters:  
-    ----------
-    G: nx graph
-
-    Returns:
-    ----------
-    points_in_faces: 3d array, 1000 random dots for each face
-    centroid_in_faces: 2d array, centroid for each face
-    '''
-    tot = 5000000
-    print(f'Scattering {tot} random points and binning by face, takes about 30 s...')
-    print()
-    points = scatter_everywhere(G.graph['x_min'], G.graph['x_max'], 
-                                G.graph['y_min'], G.graph['y_max'], tot)
-    
-    L = len(G.graph['faces_passed'])
-
-    points_in_faces = np.ndarray((L,1000,2))
-    centroid_in_faces = np.ndarray((L,), dtype = 'object')
-
-    for i in range(L):
-        # create path for polygon: 
-        face_pos = G.graph['faces_passed'][i]
-        path = Path(face_pos)
-        # find points inside:
-        inside = path.contains_points(points)
-
-        inside_pos = points[inside]
-        try:
-            points_in_faces[i] = inside_pos[0:1000,:] 
-        except IndexError:
-            print(f'Not enough random points are in face {i}!')
-        
-        centroid_in_faces[i] = (np.mean(inside_pos[:,0]), np.mean(inside_pos[:,1]))
-    
-    print('Binning completed.')
-    print()
-    return points_in_faces, centroid_in_faces

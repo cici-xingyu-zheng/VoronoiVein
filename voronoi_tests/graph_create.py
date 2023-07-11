@@ -1,10 +1,18 @@
-import numpy as np
-import pandas as pd
+
 import os
 import cv2
+
+import numpy as np
+import pandas as pd
 import networkx as nx
+
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
+
+### This module create the basic graph object 
+### for the leaf vein and the hydathode for 
+### the spatial statistical tests.
+
 
 # ==================================== HELPER FUNCs =========================================
 def trim_fake_edge(G):
@@ -12,7 +20,7 @@ def trim_fake_edge(G):
     'helper func for read_nefi_graph(), recursively remove nodes when node deg == 1'
     
     deg_node_list = G.degree()
-    degs = [d for n, d in G.degree()]
+    degs = [d for _, d in G.degree()]
     
     if min(degs) !=1:
         return G
@@ -25,6 +33,8 @@ def trim_fake_edge(G):
 
 def create_dot_graph(dot_file):
     '''
+    Create a list of hydathodes, and the dot graph object.
+
     Parameter:  
     ----------
     dot_file: string, path to dot img file
@@ -38,7 +48,7 @@ def create_dot_graph(dot_file):
     # load in grayscale mode
     img = cv2.imread(dot_file, 0)
     # threshold optimization:
-    th, threshed = cv2.threshold(img, 100, 255,  cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
+    _, threshed = cv2.threshold(img, 100, 255,  cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
     # output contour list for dots:
     contour = cv2.findContours(threshed, cv2.RETR_LIST,  cv2.CHAIN_APPROX_SIMPLE)[-2]
     
@@ -47,7 +57,7 @@ def create_dot_graph(dot_file):
         x_cor = [contour[n][i][0][0] for i in range(contour[n].shape[0])]
         y_cor = [contour[n][i][0][1] for i in range(contour[n].shape[0])]
         # note that we flip x and y, to match the x, y in the vein graph:
-        dot_list.append((np.around(np.array(y_cor).mean(), 2), np.around(np.array(x_cor).mean(), 2)) )
+        dot_list.append((np.around(np.array(y_cor).mean(), 2), np.around(np.array(x_cor).mean(), 2)))
     
     G_dots = nx.Graph()
     G_dots.add_nodes_from(dot_list) 
@@ -57,9 +67,11 @@ def create_dot_graph(dot_file):
 
 def read_nefi_graph(vein_file):
     '''
+    Create vein graph based on the graph extraction txt file from NEFI.
+
     Parameter:  
     ----------
-    vein_file: string, path to vein txt file, graph extracted from nefi
+    vein_file: string, path to the vein txt file.
     
     Returns:
     ----------
@@ -88,9 +100,10 @@ def read_nefi_graph(vein_file):
     
     return G_vein
 
-
 def merge_graphs(G_vein, G_dot):
     '''
+    Conbine the vein and hydathode graph object to one graph. 
+
     Parameter:  
     ----------
     G_vein: nx graph; trimmed graph for veins
@@ -120,6 +133,8 @@ def merge_graphs(G_vein, G_dot):
 
 def get_faces(G, G_eb, bound = 30):
     '''
+    Function to find all smallest loops (has no edges intersecting within) in the vein graph.
+
     Parameter:  
     ----------
     G: nx graph
@@ -170,6 +185,8 @@ def get_faces(G, G_eb, bound = 30):
 
 def one_per_loop(G, faces, dot_list):
     '''
+    Determine the one hydathode per polygon set.
+    
     Parameter:  
     ----------
     G: nx graph
@@ -194,6 +211,9 @@ def one_per_loop(G, faces, dot_list):
                 dot_in[i].append(dot_list[j])
 
     dot_bool = [dot_count[n] == 1 for n in range(dot_count.shape[0])]
+    dot_bool_2 = [dot_count[n] > 1 for n in range(dot_count.shape[0])]
+
+    num_no_dot = np.sum(np.array([dot_count[n] == 0 for n in range(dot_count.shape[0])]))
 
     faces_passed = []
     dots_passed = []
@@ -203,16 +223,20 @@ def one_per_loop(G, faces, dot_list):
             G.nodes[dot_in[i][0]]['type'] = 'single_dot'
             faces_passed.append(faces[i])
             dots_passed.append(dot_in[i][0])
+    
+    G.graph['num_no_dot'] = num_no_dot
+    G.graph['num_one_dot'] = len(dots_passed)
+    G.graph['num_tot'] = len(faces)
+    G.graph['num_multi'] = np.sum(np.array(dot_bool_2))
 
     return dot_bool, dots_passed, faces_passed
-
-
-
 
 # ==================================== MAIN =========================================
 def graph_creation(sample, dot_folder = 'dot_images', vein_folder = 'vein_file'):
 
     '''
+    Comebine graph creation functions. Read the vein and dot files respectively, and create the one graph object to start for all spatial tests.
+
     Parameter:  
     ----------
     sample: string, sample name of the original image taken 
@@ -236,10 +260,6 @@ def graph_creation(sample, dot_folder = 'dot_images', vein_folder = 'vein_file')
     
     dot_file = f'{dot_folder}/{sample}_dots.jpg'
     vein_file = f'{vein_folder}/{sample}.txt'
-
-    ### this is obsolete; already changed for Chemical folder 12/27/22 
-    # dot_file = f'{dot_folder}/{sample}_Hydathodes.jpg'
-    # vein_file = f'{vein_folder}/{sample}_Veins.txt'
     
     assert (os.path.exists(dot_file)), 'dot image file does not exist!'
     assert (os.path.exists(vein_file)), 'vein graph txt does not exist!'
@@ -280,19 +300,21 @@ def graph_creation(sample, dot_folder = 'dot_images', vein_folder = 'vein_file')
     return G
 
 
-
 # the dual can only be created after running the tests in voronoi_local.py!!!
-# perhaps we can do a warning here using assert (05/03/22)
-
 def make_dual(G, cent_in_faces, mid_in_faces, rand_in_faces, result_mat):
     '''
+    make the dual graph of the leaf graph, that has hydathodes as the 
+    nodes, and the adjacency of hydathode as connections. 
+    Add each dual node with reference node attributes, 
+    which will be used in all Voronoi I-III. 
+
     Parameter:  
     ----------
     G: nx graph
     cent_in_faces: list of coordinates for the centroid references
     mid_in_faces: list of coordinates for the mid-point references
     rand_in_faces:  list of coordinates for the random references
-    result_mat: matrix the angle error and dist error 
+    result_mat: matrix containing the angle error and dist error 
 
     Return:
     ----------
@@ -319,21 +341,3 @@ def make_dual(G, cent_in_faces, mid_in_faces, rand_in_faces, result_mat):
     return G_dual
 
 
-
-# not used function. WON'T COPY OVER.
-def create_dual_subgraph(G_dual, rst_df, cent_df, dual_edge_list, attr = 'angle'):
-    '''
-    Select the worst 10 performing pairs.
-    Return the dual subgraph of those 10 edges.
-    '''
-    comp_df = pd.concat([rst_df[f'{attr}_diff'], cent_df[f'{attr}_diff']], axis=1)
-    comp_df.columns = ['dot', 'centroid']
-    comp_df['worse_by'] = comp_df['dot'] - comp_df['centroid']
-    worse_10 = comp_df.sort_values(by=['worse_by'], ascending = False).index.tolist()[0:10]
-    bad_apples = [dual_edge_list[i] for i in worse_10]
-    G_dual_bad_apples =  G_dual.edge_subgraph(bad_apples)
-
-    for (i, e) in enumerate(bad_apples):
-        G_dual_bad_apples.edges[e][f'centroid_{attr}'] = comp_df['centroid'][worse_10[i]]
-    
-    return G_dual_bad_apples
