@@ -167,7 +167,7 @@ def correct_pos(G, rotation):
     new_dots = []
     for dot in G.graph['dots_passed']:
         new_dots.append(rotate(G.graph['pet'], dot, rotation))
-    G.graph['dot_passed'] = new_dots
+    G.graph['dots_passed'] = new_dots
 
     return G
 
@@ -230,7 +230,7 @@ def change_coor(G, G_prime):
     new_dots = []
     for dot in G_prime.graph['dots_passed']:
         new_dots.append(G_prime.nodes[dot]['pos'])
-    G_prime.graph['dot_passed'] = new_dots
+    G_prime.graph['dots_passed'] = new_dots
     
     new_boundary = []
 
