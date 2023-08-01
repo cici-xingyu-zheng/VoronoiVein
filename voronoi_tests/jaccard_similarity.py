@@ -278,7 +278,7 @@ def bounded_noisy_polygons(G, vor, noise = 2):
     return bounded_regions
 
 
-def overlap_test(G, seeds, bounded_regions, type = 'dot'):
+def overlap_test(G, seeds, bounded_regions, type = 'hydathode'):
     '''
     Perform the Jaccard index test, computing the intersection/overlap value,
     for each vein graph, and the corresponding Voronoi cell.

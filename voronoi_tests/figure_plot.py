@@ -12,7 +12,8 @@ from scipy.spatial import voronoi_plot_2d, Voronoi
 
 # set color scheme
 order = ['hydathode', 'centroid', 'midpoint', 'random']
-colors = ['chocolate', sns.color_palette("rocket_r")[3], sns.color_palette("rocket_r")[4], sns.color_palette("rocket_r")[5]]
+# shape the color to the format plt.scatter() accepts
+colors = ['chocolate', np.atleast_2d(sns.color_palette("rocket_r")[3]), np.atleast_2d(sns.color_palette("rocket_r")[4]), np.atleast_2d(sns.color_palette("rocket_r")[5])]
 palette = dict(zip(order, colors))
 
 def quick_plot(G):
@@ -28,7 +29,7 @@ def quick_plot(G):
         node_positions[node] = node
         node_color.append(color_dict[G.nodes[node]['type']])
     
-    _, ax = plt.subplots(figsize=(9, 9/G.graph['ratio']))
+    _, ax = plt.subplots(figsize=(8, 8/G.graph['ratio']))
    
     nx.draw(G, pos=node_positions, node_size= 20, node_color= node_color, ax = ax) 
     
@@ -57,7 +58,7 @@ def plot_testable(G, G_dual):
     for node in G_dual.nodes:
         node_position_dual[node] = node
 
-    _, ax = plt.subplots(figsize=(10,10/G.graph['ratio']))
+    _, ax = plt.subplots(figsize=(8,8/G.graph['ratio']))
 
     for i in range(len(G.graph['faces_passed'])):
         p = mpl.patches.Polygon(G.graph['faces_passed'][i], facecolor = 'C7', alpha = .1)
@@ -67,7 +68,7 @@ def plot_testable(G, G_dual):
 
     nx.draw(G_dual, pos=node_position_dual, node_size= 20,  node_color= 'seagreen', 
             edge_color ='seagreen',  width = 1, ax = ax)
-    
+    plt.tight_layout()
     plt.show()   
   
 
@@ -89,7 +90,7 @@ def plot_baseline(G, G_dual, pt_type = 'centroid'):
         compared_position_dual[node] = (G_dual.nodes[node][pt_type][0], G_dual.nodes[node][pt_type][1])
         node_position_dual[node] = node
          
-    _, ax = plt.subplots(figsize=(9,9/G.graph['ratio']))
+    _, ax = plt.subplots(figsize=(8,8/G.graph['ratio']))
     
     # later might need two colors for two ind of nodes, dk if networkx do it automatically 
     nx.draw_networkx_edges(G, 
@@ -115,7 +116,7 @@ def plot_dist(df, test = 'angle'):
     Plot error distribution for Voronoi I tests, with test type specified 
     by 'attr' 
     '''
-    _, ax = plt.subplots(nrows =2, figsize = (8, 12))
+    _, ax = plt.subplots(nrows =2, figsize = (7, 11))
     
     sns.histplot(df, x = f'{test}_diff', hue = 'type', palette = palette,
                  kde = True, ax = ax[0])
@@ -133,8 +134,9 @@ def plot_dist(df, test = 'angle'):
         l.set_color('black')
         l.set_alpha(0.8)
     
-    ax[0].set_title(f'{test} difference distribution', fontsize = 16)
+    ax[0].set_title(f'{test} difference distribution', fontsize = 14)
 
+    plt.tight_layout()
     plt.show()
     
 
@@ -152,18 +154,20 @@ def plot_voronoi(G, vor):
         node_positions[node] = node
         node_color.append(color_dict[G.nodes[node]['type']])
 
-    _ , ax = plt.subplots(figsize=(9,9/G.graph['ratio']))
+    _ , ax = plt.subplots(figsize=(8,8/G.graph['ratio']))
     
     nx.draw(G, pos = node_positions, node_size= 20, node_color= node_color, ax = ax) 
 
     voronoi_plot_2d(vor, show_vertices=False, line_colors='orange',
                     line_width=2, line_alpha=0.6, point_size=2, ax = ax)
+    
+    plt.tight_layout()
     plt.show()
      
 
 
 
-def plot_overlap_diff(G, bounded_regions, seeds, single_dot, type = 'dot'):
+def plot_overlap_diff(G, bounded_regions, seeds, single_dot, type = 'hydathode'):
 
     '''
     Voronoi II visualization.
@@ -221,7 +225,7 @@ def plot_overlap_diff(G, bounded_regions, seeds, single_dot, type = 'dot'):
         if single_dot[i]:
             ax.scatter(seeds[i][0], seeds[i][1], s = 10, c = palette[type])
 
-
+    plt.tight_layout()
     plt.show()
 
 
@@ -246,7 +250,7 @@ def plot_predicted_voronoi(G, predicted_centers):
     dot_list = np.array(G.graph['dots_passed'])
 
 
-    _, ax = plt.subplots(figsize=(9, 9/G.graph['ratio']))
+    _, ax = plt.subplots(figsize=(8, 8/G.graph['ratio']))
 
 
     nx.draw_networkx_edges(G, pos=node_positions, edge_color = 'C7', ax = ax) 
