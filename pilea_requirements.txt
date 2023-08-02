@@ -6,7 +6,7 @@ backports.functools-lru-cache @ file:///home/conda/feedstock_root/build_artifact
 bambi==0.9.3
 Bottleneck @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_29949159-f86f-474b-bc1f-aaa1e0e222b4ofusifik/croots/recipe/bottleneck_1657175564045/work
 cachetools==5.2.0
-certifi==2022.12.7
+certifi @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_2emnmf1qow/croot/certifi_1690232232440/work/certifi
 cftime @ file:///opt/concourse/worker/volumes/live/007f2832-8aad-4383-6f4a-39fe1618b401/volume/cftime_1638358490129/work
 cloudpickle==2.2.0
 comm @ file:///home/conda/feedstock_root/build_artifacts/comm_1670575068857/work
