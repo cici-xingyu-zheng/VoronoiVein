@@ -139,4 +139,4 @@ dependencies:
     - statannot==0.2.3
     - toolz==0.12.0
     - xarray-einstats==0.4.0
-prefix: /Users/xinzheng/opt/anaconda3/envs/pilea
+# prefix: /Users/xinzheng/opt/anaconda3/envs/pilea
