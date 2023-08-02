@@ -27,7 +27,7 @@ conda create --name pilea --file pilea_requirements.txt
 This way we create a virtual environment with all the package versions freezed for this project.
 
 
-2. activate the `pilea` environment we just created:
+2. activate the `pilea` environment we just created and install jupyter notebook:
 
 ```
 conda activate pilea
