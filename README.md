@@ -31,6 +31,7 @@ This way we create a virtual environment with all the package versions freezed f
 
 ```
 conda activate pilea
+conda install jupyter 
 ```
 
 
